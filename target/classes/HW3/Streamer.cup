@@ -1,0 +1,149 @@
+import java_cup.runtime.*;
+
+/* This code redefines a syntax error to give a more useful message */
+parser code
+{:
+public void syntax_error(Symbol lastToken) {
+    System.err.println("Syntax error at  " +
+                       "Line: " + lastToken.left + "   " +
+                       "Column: " + lastToken.right);
+}
+
+public void report_fatal_error(String message, Object info) {
+    report_error(message, info);
+    done_parsing();
+    System.exit(1);
+}
+:};
+
+/* Terminals (tokens returned by the scanner). */
+/* This is what generates sym.java! */
+terminal SEMICOLON, ASSIGN, PLUS, MINUS, TIMES, DIVIDE, MOD;
+terminal AND, OR, NOT, EQUALS, LT, GT, LEQ, GEQ;
+terminal OPENCURLY, CLOSECURLY;
+terminal OPENPAREN, CLOSEPAREN;
+terminal OPENSQBRACE, CLOSESQBRACE;
+terminal COMMA, COLON, READFILE, WRITEFILE, OPENFILTER, CLOSEFILTER;
+terminal NUMTYPE, TEXTTYPE, BOOLTYPE, VOIDTYPE, LISTTYPE;
+terminal TRUE, FALSE;
+terminal PRINT, INPUT, EXIT, UNTIL, ERROR, FUNC;
+terminal IF, ELSE, FOR, WHILE, BREAK, RETURN;
+terminal String NUM, ID, QSTRING;
+
+/* Non terminals */
+non terminal ProgramNode program;
+non terminal FunctionListNode func_list;
+non terminal StatementListNode stmt_list;
+non terminal StatementNode stmt;
+non terminal ExpressionNode expr;
+non terminal TypeNode type;
+
+/* Precedences */
+precedence right ASSIGN;
+precedence left PLUS, MINUS;
+
+/* The grammar rules */
+program ::= func_list:f stmt_list:s
+    {:
+        System.err.println("Program parsed!");
+        RESULT = new ProgramNode(f, s);
+    :}
+;
+
+func_list ::= /* epsilson: TODO! */
+    {:
+        System.err.println("Function list parsed!");
+        RESULT = new FunctionListNode();
+    :}
+;
+
+stmt_list ::= stmt:s stmt_list:l
+    {:
+        System.err.println("Statement list parsed!");
+        /* Add statement at position 0; it should be at the *front* of the list */
+        l.addStatement(s, 0);
+        RESULT = l;
+    :}
+            | /* epsilon */
+    {:
+        System.err.println("Empty statement list parsed!");
+        RESULT = new StatementListNode();
+    :}
+;
+
+stmt      ::= expr:e SEMICOLON
+    {:
+        System.err.println("Statement parsed as expression!");
+        RESULT = new ExpressionStatementNode(e);
+    :}
+            | PRINT expr:e SEMICOLON
+    {:
+        System.err.println("Statement parsed as print!");
+        RESULT = new PrintStatementNode(e);
+    :}
+            | type:t ID:i ASSIGN expr:e SEMICOLON
+    {:
+        System.err.println("Statement parsed as a declaration assignment!");
+        AssignExpressionNode assignment = new AssignExpressionNode(i, e);
+        RESULT = new DeclarationStatementNode(t, i, assignment);
+    :}
+            | type:t ID:i SEMICOLON
+    {:
+        System.err.println("Statement parsed as a declaration!");
+        RESULT = new DeclarationStatementNode(t, i);
+    :}
+;
+
+expr      ::= ID:i ASSIGN expr:e
+    {:
+        System.err.println("Expression parsed as assignment!");
+        RESULT = new AssignExpressionNode(i, e);
+    :}
+            | expr:e1 PLUS expr:e2
+    {:
+        System.err.println("Expression parsed as plus!");
+        RESULT = new BinaryOpExpressionNode(e1, e2, "+");
+    :}
+            | expr:e1 MINUS expr:e2
+    {:
+        System.err.println("Expression parsed as minus!");
+        RESULT = new BinaryOpExpressionNode(e1, e2, "-");
+    :}
+            | ID:i
+    {:
+        System.err.println("Expression parsed as ID!");
+        RESULT = new IdExpressionNode(i);
+    :}
+            | NUM:n
+    {:
+        System.err.println("Expression parsed as NUM!");
+        RESULT = new NumExpressionNode(n);
+    :}
+;
+
+type      ::= NUMTYPE
+    {:
+        System.err.println("Type parsed as NUM!");
+        RESULT = new TypeNode("num");
+    :}
+            | TEXTTYPE
+    {:
+        System.err.println("Type parsed as TEXT!");
+        RESULT = new TypeNode("text");
+    :}
+            | BOOLTYPE
+    {:
+        System.err.println("Type parsed as BOOL!");
+        RESULT = new TypeNode("bool");
+    :}
+            | VOIDTYPE
+    {:
+        System.err.println("Type parsed as VOID!");
+        RESULT = new TypeNode("void");
+    :}
+            | LISTTYPE LT type:t GT
+    {:
+        System.err.println("Type parsed as LIST!");
+        RESULT = new ListTypeNode(t);
+    :}
+;

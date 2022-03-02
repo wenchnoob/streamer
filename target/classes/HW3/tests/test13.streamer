@@ -1,0 +1,9 @@
+func num sum(list<num> nums)
+{
+  num result = 0;
+  for (num n : nums)
+  {
+    result = result + n;
+  }
+  return result;
+}

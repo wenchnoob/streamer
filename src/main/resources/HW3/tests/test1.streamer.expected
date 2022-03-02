@@ -1,0 +1,19 @@
+Program parsed correctly!
+---------------------------
+--------Printing AST-------
+---------------------------
+Program
+    Function List
+    Statement List
+        Declaration statement: x
+            Type: num
+            Assignment to variable: x
+                Number: 3.5
+        Declaration statement: y
+            Type: num
+            Assignment to variable: y
+                Binary operator '+'
+                    Identifier: x
+                    Number: 1.0
+        Print Statement
+            Identifier: y

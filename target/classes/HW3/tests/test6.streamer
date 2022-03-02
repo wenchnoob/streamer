@@ -1,0 +1,7 @@
+func num addThem(num x, num y)
+{
+  num z = x + y;
+  return z;
+}
+
+print addThem(40, 2);
