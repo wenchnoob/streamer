@@ -1,0 +1,86 @@
+Type: PROGRAM
+Children:
+	Child 0:
+		Type: VARIABLE
+		Value: n
+		Children:
+			Child 0:
+				Variable Type: NUMERIC_TYPE 
+			Child 1:
+				Type: NUMERIC_LITERAL
+				Value: 5.0
+	Child 1:
+		Type: VARIABLE
+		Value: in
+		Children:
+			Child 0:
+				Variable Type: STRING_TYPE 
+			Child 1:
+				Type: INPUT
+				Value:
+					Type: STRING_LITERAL
+					Value: Choose a number: 
+	Child 2:
+		Type: PRINT
+		Value:
+			Type: BINARY_EXPRESSION
+			Operator: +
+			Children:
+				Child 0:
+					Type: STRING_LITERAL
+					Value: You chose the number \n: \t
+				Child 1:
+					Type: IDENTIFIER
+					Value: in
+	Child 3:
+		Type: VARIABLE
+		Value: charsInLines
+		Children:
+			Child 0:
+				Variable Type: LIST_TYPE LIST_TYPE LIST_TYPE STRING_TYPE 
+			Child 1:
+				Type: BINARY_EXPRESSION
+				Operator: List Access
+				Children:
+					Child 0:
+						Children:
+							Child 0:
+								Children:
+									Child 0:
+										Children:
+											Child 0:
+												Type: STRING_LITERAL
+												Value: h
+											Child 1:
+												Type: STRING_LITERAL
+												Value: e
+											Child 2:
+												Type: STRING_LITERAL
+												Value: y
+									Child 1:
+										Children:
+											Child 0:
+												Type: STRING_LITERAL
+												Value: w
+											Child 1:
+												Type: STRING_LITERAL
+												Value: h
+							Child 1:
+								Children:
+									Child 0:
+										Children:
+											Child 0:
+												Type: STRING_LITERAL
+												Value: w
+											Child 1:
+												Type: STRING_LITERAL
+												Value: h
+											Child 2:
+												Type: STRING_LITERAL
+												Value: a
+											Child 3:
+												Type: STRING_LITERAL
+												Value: t
+					Child 1:
+						Type: NUMERIC_LITERAL
+						Value: 2.0

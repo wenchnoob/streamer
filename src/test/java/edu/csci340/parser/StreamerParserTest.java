@@ -237,12 +237,10 @@ public class StreamerParserTest {
                                         new ForLoop(
                                                 new VariableStatement(new VariableType(NUMERIC_TYPE), "n", null),
                                                 new Identifier("nums"),
-                                                new BlockStatement(
-                                                        new List(new PrintStatement(new Identifier("n")),
-                                                                new PrintStatement(
-                                                                        new BinaryExpression("+", new Identifier("n"), new Literal(NUMERIC_LITERAL, "1"))
-                                                                ))
-                                                )
+                                                new List(new PrintStatement(new Identifier("n")),
+                                                        new PrintStatement(
+                                                                new BinaryExpression("+", new Identifier("n"), new Literal(NUMERIC_LITERAL, "1"))
+                                                        ))
                                         )
                                 )
                         )
@@ -270,14 +268,17 @@ public class StreamerParserTest {
                 5 * 6 + n;
                 """);
 
+        //System.out.println(ProgramBuilder.builder()
+        //        .expr()
+        //        .left().leftLiteral(5).op("+").right().leftLiteral(5).op("+").rightLiteral(7).build());
+
         Assertions.assertThat(program)
                 .as("Should parse identifier")
                 .usingRecursiveComparison()
                 .isEqualTo(
                         ProgramBuilder.builder()
                                 .expr()
-                                .left().leftLiteral(5).op("+").rightLiteral(5).op("+").rightLiteral(7)
-                                .end()
+                                .left().leftLiteral(5).op("+").rightLiteral(5).op("+").rightLiteral(7).end()
                                 .expr()
                                 .left().leftLiteral(5).op("*").rightLiteral(6).op("+").rightId("n")
                                 .end()

@@ -94,10 +94,11 @@ public class StreamerLexer {
     private int line;
     private int column;
 
-    public void init(String program) {
+    public StreamerLexer init(String program) {
         this.program = program;
         line = 1;
         column = 1;
+        return this;
     }
 
     public boolean hasNextToken() {

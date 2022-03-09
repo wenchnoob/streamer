@@ -1,0 +1,1 @@
+print "You chose the number: " + (input "Choose a number: ") + " and I chose the number " + ({1, 2, 3}[1]);

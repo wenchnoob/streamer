@@ -4,6 +4,9 @@ import edu.csci340.parser.ast.nodetypes.ASTNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import static edu.csci340.Utils.tabs;
 
 public class VariableType extends ASTNode {
 
@@ -11,13 +14,13 @@ public class VariableType extends ASTNode {
     List<Type> subTypes;
 
     public VariableType(Type type) {
-        super(type);
+        super(type, null);
     }
 
     public VariableType(Type type, ASTNode subtype) {
-        super(type);
+        super(type, null);
         this.subtype = subtype;
-        if (subtype != null) {
+        if (Objects.nonNull(subtype)) {
             this.subTypes = new ArrayList<>();
             flatten((VariableType) subtype, subTypes);
         }
@@ -25,14 +28,14 @@ public class VariableType extends ASTNode {
 
     @Override
     public String toString(int depth) {
-        StringBuilder str = new StringBuilder();
-        str.append(type()).append(" ");
-        if (subTypes != null) for (Type t: subTypes) str.append(t).append(" ");
-        return str.toString();
+        StringBuilder str = new StringBuilder().append(tabs(depth));
+        str.append("Variable Type: ").append(type()).append(" ");
+        if (Objects.nonNull(subTypes)) for (Type t: subTypes) str.append(t).append(" ");
+        return str.append('\n').toString();
     }
 
     private void flatten(VariableType type, List<Type> types) {
-        if (type == null) return;
+        if (Objects.isNull(type)) return;
         types.add(type.type());
         flatten((VariableType) type.subtype, types);
     }

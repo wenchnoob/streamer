@@ -7,6 +7,12 @@ import edu.csci340.parser.ast.nodetypes.expressions.literals.Literal;
 
 public class Utils {
 
+    public static String tabs(int n) {
+        StringBuilder tabs = new StringBuilder();
+        for (int i = 0; i < n; i++) tabs.append('\t');
+        return tabs.toString();
+    }
+
     public static Literal parseLiteralTokenToNode(Token tok) {
         return switch (tok.type()) {
             case NUMERIC_LITERAL -> new Literal(ASTNode.Type.NUMERIC_LITERAL, tok.value());

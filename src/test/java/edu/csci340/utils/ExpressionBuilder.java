@@ -3,6 +3,7 @@ package edu.csci340.utils;
 import edu.csci340.parser.ast.nodetypes.ASTNode;
 import edu.csci340.parser.ast.nodetypes.List;
 import edu.csci340.parser.ast.nodetypes.expressions.BinaryExpression;
+import edu.csci340.parser.ast.nodetypes.expressions.UnaryExpression;
 import edu.csci340.parser.ast.nodetypes.expressions.literals.Identifier;
 import edu.csci340.parser.ast.nodetypes.expressions.literals.Literal;
 
@@ -11,6 +12,7 @@ public class ExpressionBuilder implements Builder {
     Object value;
     Builder parent;
     ExpressionBuilder left, right;
+    private boolean isUnary;
 
     public ExpressionBuilder(Builder parent) {
         this.parent = parent;
@@ -80,7 +82,11 @@ public class ExpressionBuilder implements Builder {
     }
 
     private ExpressionBuilder check() {
-        if (this.left != null && this.right != null && this.parent instanceof ExpressionBuilder eb) return eb;
+        if (this.parent instanceof ExpressionBuilder eb) {
+            if (this.left != null && this.right != null) return eb.check();
+            if (this.value instanceof Identifier) return eb.check();
+            if (this.value instanceof Literal) return eb.check();
+        }
         return this;
     }
 
@@ -105,24 +111,35 @@ public class ExpressionBuilder implements Builder {
     }
 
     public ProgramBuilder end() {
+        if (parent instanceof ExpressionBuilder exp) return exp.end();
+
         if (parent instanceof ProgramBuilder pb) {
             pb.addStatement(build());
+            return pb;
         } else if (parent instanceof VariableStatementBuilder vsb) {
-          return vsb.end(build());
+            return vsb.end(build());
         } else if (parent instanceof PrintStatementBuilder psb) {
             return psb.end(build());
         }
+
         return null;
     }
 
     public ASTNode build() {
-        if (parent instanceof ProgramBuilder && this.left != null && this.right != null) {
-            return new BinaryExpression((String) value, this.left.build(), this.right.build());
-        }
+        if (isUnary) return new UnaryExpression((String) value, this.left.build());
+        if (parent instanceof ProgramBuilder && this.left != null && this.right != null) return new BinaryExpression((String) value, this.left.build(), this.right.build());
         if (value instanceof Literal l) return l;
         if (value instanceof Identifier i) return i;
+        if (value instanceof UnaryExpression u) return u;
         if (!(value instanceof String)) throw new IllegalStateException("Attempting to build expression with illegal node!!!: " + value);
         return new BinaryExpression((String) value, this.left.build(), this.right.build());
+    }
+
+    public ExpressionBuilder unary(String op) {
+        this.isUnary = true;
+        this.op(op);
+        this.left = new ExpressionBuilder(this);
+        return this.left;
     }
 
 }

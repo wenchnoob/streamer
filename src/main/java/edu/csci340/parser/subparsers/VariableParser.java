@@ -6,6 +6,8 @@ import edu.csci340.parser.StreamerParser;
 import edu.csci340.parser.ast.nodetypes.*;
 import edu.csci340.parser.ast.nodetypes.expressions.assignment.*;
 import edu.csci340.parser.ast.nodetypes.expressions.literals.Identifier;
+import edu.csci340.parser.ast.nodetypes.statements.FileAppend;
+import edu.csci340.parser.ast.nodetypes.statements.FileWrite;
 
 public class VariableParser {
 
@@ -60,11 +62,12 @@ public class VariableParser {
         return new VariableStatement(new VariableType(ASTNode.Type.PREDEFINED), id.value(), parent.expression());
     }
 
-    private ASTNode parseType() {
+    public ASTNode parseType() {
         Token la = parent.currentLookAhead();
         if (la.type() != BUILT_IN_TYPE) return null;
         parent.advance();
         return switch (la.value()) {
+            case "void" -> new VariableType(ASTNode.Type.VOID);
             case "text" -> new VariableType(ASTNode.Type.STRING_TYPE);
             case "num" -> new VariableType(ASTNode.Type.NUMERIC_TYPE);
             case "bool" -> new VariableType(ASTNode.Type.BOOLEAN_TYPE);

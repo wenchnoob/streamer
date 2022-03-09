@@ -3,6 +3,7 @@ package edu.csci340.parser;
 import edu.csci340.lexer.Token;
 import edu.csci340.lexer.StreamerLexer;
 import edu.csci340.parser.ast.nodetypes.*;
+import edu.csci340.parser.ast.nodetypes.expressions.assignment.VariableType;
 import edu.csci340.parser.ast.nodetypes.functions.FunctionDefinition;
 import edu.csci340.parser.ast.nodetypes.statements.*;
 import edu.csci340.parser.subparsers.ExpressionParser;
@@ -41,7 +42,7 @@ public class StreamerParser {
     private List statementList(Token.Type terminator) {
         List statements = new List(ASTNode.Type.STATEMENT_LIST);
 
-        while(this.lookahead.type() != terminator && this.lookahead.type() != Token.Type.DEFAULT) {
+        while (this.lookahead.type() != terminator && this.lookahead.type() != Token.Type.DEFAULT) {
             ASTNode statement = statement();
 
             if (this.lookahead.type() != Token.Type.SEMICOLON) fail();
@@ -49,7 +50,9 @@ public class StreamerParser {
 
             if (this.lookahead.type() == Token.Type.ERROR) {
                 advance(); // ignore error keyword
-                statement = new ErrorStatement(statement, statement());
+                if (this.lookahead.type() != Token.Type.OPENING_CURLY) fail();
+                advance(); // ignore {
+                statement = new ErrorStatement(statement, statementList(Token.Type.CLOSING_CURLY));
                 advance(); // ignore virtual semicolon
             }
 
@@ -61,20 +64,20 @@ public class StreamerParser {
 
 
     /**
-     *  Statement ::=
-     *      Expression ; |
-     *      VariableStatement ; |
-     *      PrintStatement ; |
-     *      IfStatement ; |
-     *      ExitStatement ; |
-     *      ReturnStatement ; |
-     *      BreakStatement ; |
-     *      ErrorBlock ; |
-     *      ForLoop ; |
-     *      WhileLoop ; |
-     *      FunctionDefinition ; |
-     *      SwitchStatement ; |
-     *      ;
+     * Statement ::=
+     * Expression ; |
+     * VariableStatement ; |
+     * PrintStatement ; |
+     * IfStatement ; |
+     * ExitStatement ; |
+     * ReturnStatement ; |
+     * BreakStatement ; |
+     * ErrorBlock ; |
+     * ForLoop ; |
+     * WhileLoop ; |
+     * FunctionDefinition ; |
+     * SwitchStatement ; |
+     * ;
      */
     private ASTNode statement() {
         return switch (this.lookahead.type()) {
@@ -110,7 +113,7 @@ public class StreamerParser {
     }
 
     /**
-     *  Expression
+     * Expression
      */
     public ASTNode expression() {
         return switch (this.lookahead.type()) {
@@ -120,7 +123,7 @@ public class StreamerParser {
     }
 
     /**
-     *  PrintStatement ::= PRINT Expression
+     * PrintStatement ::= PRINT Expression
      */
     public ASTNode printStatement() {
         if (this.lookahead.type() != Token.Type.PRINT) fail();
@@ -129,7 +132,7 @@ public class StreamerParser {
     }
 
     /**
-     *  ExitStatement ::= EXIT Expression
+     * ExitStatement ::= EXIT Expression
      */
     public ASTNode exitStatement() {
         if (this.lookahead.type() != Token.Type.EXIT) fail();
@@ -138,7 +141,7 @@ public class StreamerParser {
     }
 
     /**
-     *  ReturnStatement ::= Return expression
+     * ReturnStatement ::= Return expression
      */
     public ASTNode returnStatement() {
         if (this.lookahead.type() != Token.Type.RETURN) fail();
@@ -147,7 +150,7 @@ public class StreamerParser {
     }
 
     /**
-     *  BreakStatement ::= BREAK
+     * BreakStatement ::= BREAK
      */
     public ASTNode breakStatement() {
         if (this.lookahead.type() != Token.Type.BREAK) fail();
@@ -156,27 +159,30 @@ public class StreamerParser {
     }
 
     /**
-     *  ErrorBlock ::=
-     *      Block error Block |
-     *      Statement ; error Block
+     * ErrorBlock ::=
+     * Block error Block |
+     * Statement ; error Block
      */
     public ASTNode errorBlock() {
         if (this.lookahead.type() != Token.Type.OPENING_CURLY) return fail();
         ASTNode tryBlock = block();
         advance(); // ignore virtual curly
-        if (this.lookahead.type() != Token.Type.ERROR) return tryBlock; // returns early if just finds error Block -- assumes the statement has already been found.
+        if (this.lookahead.type() != Token.Type.ERROR)
+            return tryBlock; // returns early if just finds error Block -- assumes the statement has already been found.
         advance(); // ignore error
-        return new ErrorStatement(tryBlock, block());
+        if (this.lookahead.type() != Token.Type.OPENING_CURLY) fail(); // fails if it does not find opening curly.
+        advance(); // ignore {
+        return new ErrorStatement(tryBlock, statementList(Token.Type.CLOSING_CURLY));
     }
 
     /**
-     *  IfStatement ::=
-     *      IF ( Expression ) Statement ; |
-     *      IF ( Expression ) Statement ; ELSE Statement ; |
-     *      IF ( Expression ) Statement ; ELSE Block
-     *      IF ( Expression ) Block |
-     *      IF ( Expression ) Block ELSE Statement ; |
-     *      IF ( Expression ) Block ELSE Block
+     * IfStatement ::=
+     * IF ( Expression ) Statement ; |
+     * IF ( Expression ) Statement ; ELSE Statement ; |
+     * IF ( Expression ) Statement ; ELSE Block
+     * IF ( Expression ) Block |
+     * IF ( Expression ) Block ELSE Statement ; |
+     * IF ( Expression ) Block ELSE Block
      */
     public ASTNode ifStatement() {
         ASTNode cond;
@@ -235,9 +241,9 @@ public class StreamerParser {
     }
 
     /**
-     *  ForLoop ::=
-     *      FOR ( Statement : Expression ) Statement ; |
-     *      FOR ( Statement : Expression ) Block
+     * ForLoop ::=
+     * FOR ( Statement : Expression ) Statement ; |
+     * FOR ( Statement : Expression ) Block
      */
     public ASTNode forLoop() {
         if (lookahead.type() != Token.Type.FOR) fail();
@@ -251,14 +257,19 @@ public class StreamerParser {
         ASTNode collection = expression();
         if (lookahead.type() != Token.Type.CLOSING_PAREN) fail();
         advance();
-        ASTNode body = this.currentLookAhead().type() == Token.Type.OPENING_CURLY ? block() : statement();
+        ASTNode body;
+        if (this.currentLookAhead().type() == Token.Type.OPENING_CURLY) {
+            body = block();
+        }
+        else body = statement();
+
         return new ForLoop(capture, collection, body);
     }
 
     /**
-     *  WhileLoop ::=
-     *      WHILE ( Expression ) Statement ; |
-     *      WHILE ( Expression ) Block
+     * WhileLoop ::=
+     * WHILE ( Expression ) Statement ; |
+     * WHILE ( Expression ) Block
      */
     public ASTNode whileLoop() {
         if (lookahead.type() != Token.Type.WHILE) fail();
@@ -273,8 +284,8 @@ public class StreamerParser {
     }
 
     /**
-     *  Until ::=
-     *      UNTIL VariableStatement ; Block
+     * Until ::=
+     * UNTIL VariableStatement ; Block
      */
     public ASTNode untilLoop() {
         if (lookahead.type() != Token.Type.UNTIL) fail();
@@ -286,16 +297,15 @@ public class StreamerParser {
     }
 
     /**
-     *  FunctionDefinition ::=
-     *      FUNC id ( FormalParameterList ) Block
+     * FunctionDefinition ::=
+     * FUNC id ( FormalParameterList ) Block
      */
     public ASTNode functionDefinition() {
         if (lookahead.type() != Token.Type.FUNC) fail();
         advance();
 
         if (lookahead.type() != Token.Type.BUILT_IN_TYPE) fail();
-        String returnType = lookahead.value();
-        advance();
+        ASTNode returnType = new VariableParser(this).parseType();
 
         if (lookahead.type() != Token.Type.ID) fail();
         String id = lookahead.value();
@@ -306,20 +316,20 @@ public class StreamerParser {
 
         List formalParameterList = new List(ASTNode.Type.FORMAL_PARAMETER_LIST);
         VariableParser vp = new VariableParser(this);
-        while(lookahead.type() != Token.Type.CLOSING_PAREN) {
+        while (lookahead.type() != Token.Type.CLOSING_PAREN) {
             formalParameterList.append(vp.variableStatement());
             if (lookahead.type() != Token.Type.COMMA) break;
             advance();
         }
         advance();
-        return new FunctionDefinition(returnType, id, formalParameterList,  block());
+        return new FunctionDefinition(returnType, id, formalParameterList, block());
     }
 
     /**
-     *  SwitchStatement ::=
-     *      SWITCH ( Expression ) { CaseList } |
-     *      SWITCH ( Expression ) { CaseList DefaultCase }
-     * */
+     * SwitchStatement ::=
+     * SWITCH ( Expression ) { CaseList } |
+     * SWITCH ( Expression ) { CaseList DefaultCase }
+     */
     public ASTNode switchStatement() {
         if (this.lookahead.type() != Token.Type.SWITCH) fail();
         advance();
@@ -339,9 +349,9 @@ public class StreamerParser {
     }
 
     /**
-     *  CaseList ::=
-     *      Case : StatementList ; CaseList
-     * */
+     * CaseList ::=
+     * Case : StatementList ; CaseList
+     */
     public List caseList() {
         List cases = new List(ASTNode.Type.CASE);
         while (this.currentLookAhead().type() == Token.Type.CASE) {
@@ -356,9 +366,9 @@ public class StreamerParser {
     }
 
     /**
-     *  DefaultCase ::=
-     *      DEFAULT : StatementList ;
-     * */
+     * DefaultCase ::=
+     * DEFAULT : StatementList ;
+     */
     public ASTNode defaultCase() {
         if (lookahead.type() != Token.Type.DEFAULT) fail();
         advance();
@@ -369,14 +379,14 @@ public class StreamerParser {
     }
 
     /**
-     *  Block ::=
-     *      { StatementList } |
-     *      { }
+     * Block ::=
+     * { StatementList } |
+     * { }
      */
     private ASTNode block() {
         if (this.lookahead.type() != Token.Type.OPENING_CURLY) return statementList(Token.Type.EOF);
         advance();
-        ASTNode b = this.lookahead.type() == Token.Type.CLOSING_CURLY ? new BlockStatement(null) : new BlockStatement(statementList(Token.Type.CLOSING_CURLY));
+        ASTNode b = this.lookahead.type() == Token.Type.CLOSING_CURLY ? new List() : statementList(Token.Type.CLOSING_CURLY);
         advance();
         pushBack(new Token(Token.Type.SEMICOLON, null, -1, -1));
         return b;

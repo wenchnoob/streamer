@@ -2,18 +2,21 @@ package edu.csci340.interpreter.expressions;
 
 import edu.csci340.interpreter.StreamerInterpreter;
 import edu.csci340.parser.ast.nodetypes.ASTNode;
+import edu.csci340.parser.ast.nodetypes.expressions.literals.Literal;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 public class Binary {
 
     private static Binary instance;
 
-    private Binary() {}
+    private Binary() {
+    }
 
     public static Binary getInstance() {
         if (instance == null) instance = new Binary();
@@ -36,42 +39,50 @@ public class Binary {
             put("<<", read);
             put(">>", write);
             put(">>+", append);
+            put("&&", and);
+            put("||", or);
+            put("[]", access);
+            put("[??]", filter);
         }
     };
 
-    public void eval(ASTNode exp) {
+    public ASTNode eval(ASTNode exp) {
         if (exp.type() == ASTNode.Type.NUMERIC_LITERAL ||
-            exp.type() == ASTNode.Type.STRING_LITERAL ||
-            exp.type() == ASTNode.Type.BOOLEAN_LITERAL) return;
+                exp.type() == ASTNode.Type.STRING_LITERAL ||
+                exp.type() == ASTNode.Type.BOOLEAN_LITERAL) return exp;
 
-        ASTNode l = exp.children().get(0);
-        ASTNode r = exp.children().get(1);
-
-        StreamerInterpreter.eval(l);
-        StreamerInterpreter.eval(r);
+        ASTNode l = exp.firstChild(StreamerInterpreter.eval(exp.firstChild()));
+        ASTNode r = exp.lastChild(StreamerInterpreter.eval(exp.lastChild()));
 
         Object lhs = getValue(l);
         Object rhs = getValue(r);
 
         Object res = binOps.get(exp.value()).apply(lhs, rhs);
 
-        if (res instanceof String) {
-            exp.setType(ASTNode.Type.STRING_LITERAL);
-        }
+        if (res instanceof String s) return new Literal(s);
+
         if (res instanceof Double d) {
             if (d == d.intValue()) res = d.intValue();
-            exp.setType(ASTNode.Type.NUMERIC_LITERAL);
+            return new Literal(ASTNode.Type.NUMERIC_LITERAL, String.valueOf(res));
         }
+
         if (res instanceof Integer) {
-            exp.setType(ASTNode.Type.NUMERIC_LITERAL);
+            return new Literal(ASTNode.Type.NUMERIC_LITERAL, String.valueOf(res));
         }
 
-        if (res instanceof Boolean) exp.setType(ASTNode.Type.BOOLEAN_LITERAL);
+        if (res instanceof Boolean) return new Literal(ASTNode.Type.BOOLEAN_LITERAL, String.valueOf(res));
 
-        if (res instanceof List<?>) exp.setType(ASTNode.Type.EXPRESSION_LIST);
+        if (res instanceof List<?> list) {
+            edu.csci340.parser.ast.nodetypes.List ls = new edu.csci340.parser.ast.nodetypes.List(ASTNode.Type.EXPRESSION_LIST);
+            list.forEach(v -> ls.append((ASTNode) v));
+            return ls;
+        }
 
-        exp.setValue(res);
-        exp.setChildren(null);
+        if (res instanceof edu.csci340.parser.ast.nodetypes.List ls) {
+            return ls;
+        }
+
+        return exp;
     }
 
     private Object getValue(ASTNode l) {
@@ -81,9 +92,10 @@ public class Binary {
                 if (l.value() instanceof Double d)
                     if (d == d.intValue()) yield d.intValue();
                     else yield d;
-                    yield Double.valueOf(String.valueOf(l.value()));
+                yield Double.valueOf(String.valueOf(l.value()));
             }
             case BOOLEAN_LITERAL -> Boolean.valueOf(String.valueOf(l.value()));
+            case EXPRESSION_LIST -> l.children();
             default -> throw new IllegalArgumentException("Cannot retrieve a value from this node: \n" + l.toString(1));
         };
     }
@@ -95,7 +107,7 @@ public class Binary {
      * Number + Number = Number
      * Number + Boolean = Number
      * Boolean + Boolean = Boolean
-     * */
+     */
     static BinaryOperator<Object> add = (l, r) -> {
         if (l instanceof String s1) return s1 + r;
 
@@ -126,7 +138,7 @@ public class Binary {
      * Number - Number = Number
      * Number - Boolean = Number
      * Boolean - Boolean = Boolean
-     * */
+     */
     static BinaryOperator<Object> minus = (l, r) -> {
         if (l instanceof String s1) return s1.replaceAll(r.toString(), "");
 
@@ -154,7 +166,7 @@ public class Binary {
      * Number * Number = Number
      * Number * Boolean = Number
      * Boolean * Boolean = Boolean
-     * */
+     */
     static BinaryOperator<Object> mult = (l, r) -> {
         if (l instanceof Double d1) {
             if (r instanceof Double d2) return d1 * d2;
@@ -179,7 +191,7 @@ public class Binary {
      * String / Number = List<String>
      * String / Boolean = List<String>
      * Number / Number = Number
-     * */
+     */
     static BinaryOperator<Object> divide = (l, r) -> {
         if (l instanceof String s1) return new ArrayList<String>() {
             {
@@ -203,7 +215,7 @@ public class Binary {
 
     /**
      * Number % Number = Number
-     * */
+     */
     static BinaryOperator<Object> mod = (l, r) -> {
         if (l instanceof Double d1) {
             if (r instanceof Double d2) return d1 - d2;
@@ -218,15 +230,21 @@ public class Binary {
         throw new IllegalArgumentException("Incompatible types");
     };
 
-    static BinaryOperator<Object> read = (l, r) -> { return null; };
+    static BinaryOperator<Object> read = (l, r) -> {
+        return null;
+    };
 
-    static BinaryOperator<Object> write = (l, r) -> { return null; };
+    static BinaryOperator<Object> write = (l, r) -> {
+        return null;
+    };
 
-    static BinaryOperator<Object> append = (l, r) -> { return null; };
+    static BinaryOperator<Object> append = (l, r) -> {
+        return null;
+    };
 
     static BinaryOperator<Object> equals = Object::equals;
 
-    static BinaryOperator<Object> notEquals = (l, r) -> !(Boolean)equals.apply(l, r);
+    static BinaryOperator<Object> notEquals = (l, r) -> !(Boolean) equals.apply(l, r);
 
     static BinaryOperator<Object> lt = (l, r) -> {
         if (l instanceof String sl) {
@@ -257,10 +275,10 @@ public class Binary {
     };
 
     /**
-     *  Boolean && Boolean = Boolean
-     *  Boolean && Number = Boolean
-     * */
-    static BinaryOperator<Object> and = (l, r)  -> {
+     * Boolean && Boolean = Boolean
+     * Boolean && Number = Boolean
+     */
+    static BinaryOperator<Object> and = (l, r) -> {
         if (l instanceof Boolean lb) {
             if (!lb) return false;
             if (r instanceof Boolean rb) return rb;
@@ -275,9 +293,9 @@ public class Binary {
     };
 
     /**
-     *  Boolean || Boolean = Boolean
-     * */
-    static BinaryOperator<Object> or = (l, r)  -> {
+     * Boolean || Boolean = Boolean
+     */
+    static BinaryOperator<Object> or = (l, r) -> {
         if (l instanceof Boolean lb) {
             if (lb) return true;
             if (r instanceof Boolean rb) return rb;
@@ -286,6 +304,34 @@ public class Binary {
         if (r instanceof Boolean rb) {
             if (rb) return true;
             if (l instanceof Number n) return !n.equals(0);
+        }
+
+        throw new IllegalArgumentException("Incompatible types obj1: " + l + " obj2: " + r);
+    };
+
+    /**
+     *
+     */
+    static BinaryOperator<Object> access = (l, r) -> {
+        if (l instanceof List<?> ls) {
+            if (r instanceof Integer i) return ls.get(i);
+            if (r instanceof Double d) return ls.get(d.intValue());
+        }
+
+        if (l instanceof edu.csci340.parser.ast.nodetypes.List ls) {
+            if (r instanceof Integer i) return StreamerInterpreter.eval(ls.children().get(i)).value();
+            if (r instanceof Double d) return StreamerInterpreter.eval(ls.children().get(d.intValue())).value();
+        }
+
+        throw new IllegalArgumentException("Incompatible types obj1: " + l + " obj2: " + r);
+    };
+
+    /**
+     *
+     */
+    static BinaryOperator<Object> filter = (l, r) -> {
+        if (l instanceof List<?> ls) {
+            return ls.stream().filter(v -> v.equals(r)).collect(Collectors.toList());
         }
 
         throw new IllegalArgumentException("Incompatible types obj1: " + l + " obj2: " + r);

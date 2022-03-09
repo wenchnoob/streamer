@@ -5,12 +5,13 @@ import edu.csci340.parser.ast.nodetypes.ASTNode;
 import edu.csci340.parser.ast.nodetypes.statements.PrintStatement;
 
 public class Output {
-    public static void eval(ASTNode node) {
+    public static ASTNode eval(ASTNode node) {
         if (node instanceof PrintStatement p) {
-            StreamerInterpreter.eval(p.children().get(0));
-            Object toPrint = p.children().get(0).value();
+            p.value(StreamerInterpreter.eval((ASTNode) p.value()));
+            Object toPrint = ((ASTNode)p.value()).value();
             System.out.println(toPrint);
-            p.setChildren(null);
+            return null;
         }
+        return node;
     }
 }
