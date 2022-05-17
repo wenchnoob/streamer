@@ -14,7 +14,7 @@ public class ConditionalStatement extends ASTNode {
     }
 
     public ConditionalStatement(ASTNode condition, ASTNode trueBranch, ASTNode falseBranch) {
-        super(Type.CONDITIONAL, condition, new ArrayList<>(List.of(condition, trueBranch, falseBranch)));
+        super(Type.CONDITIONAL, condition, new ArrayList<>(List.of(trueBranch, falseBranch)));
     }
 
     @Override

@@ -42,12 +42,12 @@ public class HW3Test {
                         ProgramBuilder.builder()
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.NUMERIC_TYPE).end()
+                                .type().of(VariableType.VarType.NUM).end()
                                 .id("x")
                                 .expr().literal(3.5)
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.NUMERIC_TYPE).end()
+                                .type().of(VariableType.VarType.NUM).end()
                                 .id("y")
                                 .expr().op("+").leftId("x").rightLiteral(1).end()
 
@@ -70,9 +70,9 @@ public class HW3Test {
                         ProgramBuilder.builder()
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.STRING_TYPE).end()
+                                .type().of(VariableType.VarType.TEXT).end()
                                 .id("myStr")
-                                .expr().literal("This is line one with \\\"quotes inside\\\". \\n This is line two.")
+                                .expr().literal("This is line one with \"quotes inside\". \n This is line two.")
 
                                 .printStatement().expr().identifier("myStr")
                                 .build()
@@ -85,7 +85,7 @@ public class HW3Test {
                 bool val1 = true;
                 bool val2 = false;
                 bool val3 = false;
-                                
+
                 bool result = val1 || val2 && !val3;
                 """);
 
@@ -96,22 +96,22 @@ public class HW3Test {
                         ProgramBuilder.builder()
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.BOOLEAN_TYPE).end()
+                                .type().of(VariableType.VarType.BOOL).end()
                                 .id("val1")
                                 .expr().literal(true)
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.BOOLEAN_TYPE).end()
+                                .type().of(VariableType.VarType.BOOL).end()
                                 .id("val2")
                                 .expr().literal(false)
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.BOOLEAN_TYPE).end()
+                                .type().of(VariableType.VarType.BOOL).end()
                                 .id("val3")
                                 .expr().literal(false)
 
                                 .variableStatement()
-                                .type().of(ASTNode.Type.BOOLEAN_TYPE).end()
+                                .type().of(VariableType.VarType.BOOL).end()
                                 .id("result")
                                 .expr()
                                 .leftId("val1")
@@ -133,7 +133,7 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new VariableStatement(new VariableType(ASTNode.Type.LIST_TYPE, new VariableType(ASTNode.Type.STRING_TYPE, null)), "arrOfStrings",
+                                new VariableStatement(new VariableType(java.util.List.of(VariableType.VarType.LIST, VariableType.VarType.TEXT)), "arrOfStrings",
                                         new List(ASTNode.Type.EXPRESSION_LIST, new Literal("Hello"), new Literal("there"), new Literal("friends")))
                         ))
                 );
@@ -155,7 +155,7 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new ErrorStatement(new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE, null), "contents", new FileRead(new Literal("/path/to/file"))),
+                                new ErrorStatement(new VariableStatement(new VariableType(VariableType.VarType.TEXT), "contents", new FileRead(new Literal("/path/to/file"))),
                                         new List(new PrintStatement(new Literal("No such file")), new ExitStatement(new Literal(ASTNode.Type.NUMERIC_LITERAL, "1")))),
                                 new PrintStatement(new Identifier("contents"))
                         ))
@@ -170,7 +170,7 @@ public class HW3Test {
                   num z = x + y;
                   return z;
                 }
-                                
+
                 print addThem(40, 2);
                 """);
 
@@ -179,10 +179,10 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new FunctionDefinition(new VariableType(ASTNode.Type.NUMERIC_TYPE), "addThem",
-                                        new List(ASTNode.Type.FORMAL_PARAMETER_LIST, new VariableStatement(new VariableType(ASTNode.Type.NUMERIC_TYPE), "x", null),
-                                                new VariableStatement(new VariableType(ASTNode.Type.NUMERIC_TYPE), "y", null)),
-                                        new List(new VariableStatement(new VariableType(ASTNode.Type.NUMERIC_TYPE), "z", new BinaryExpression("+", new Identifier("x"), new Identifier("y"))),
+                                new FunctionDefinition(new VariableType(VariableType.VarType.NUM), "addThem",
+                                        new List(ASTNode.Type.FORMAL_PARAMETER_LIST, new VariableStatement(new VariableType(VariableType.VarType.NUM), "x", null),
+                                                new VariableStatement(new VariableType(VariableType.VarType.NUM), "y", null)),
+                                        new List(new VariableStatement(new VariableType(VariableType.VarType.NUM), "z", new BinaryExpression("+", new Identifier("x"), new Identifier("y"))),
                                                 new ReturnStatement(new Identifier("z")))),
                                 new PrintStatement(new FunctionCall("addThem", new List(ASTNode.Type.ACTUAL_PARAMETER_LIST, new Literal(ASTNode.Type.NUMERIC_LITERAL, "40"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "2"))))
                         ))
@@ -197,7 +197,7 @@ public class HW3Test {
                   text contents << path;
                   print contents;
                 }
-                                
+
                 printFile(input "Enter file path: ");
                 """);
 
@@ -206,9 +206,9 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(new Program(
                         new List(
-                                new FunctionDefinition(new VariableType(ASTNode.Type.VOID), "printFile",
-                                        new List(ASTNode.Type.FORMAL_PARAMETER_LIST, new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "path", null)),
-                                        new List(new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "contents", new FileRead(new Identifier("path"))),
+                                new FunctionDefinition(new VariableType(VariableType.VarType.VOID), "printFile",
+                                        new List(ASTNode.Type.FORMAL_PARAMETER_LIST, new VariableStatement(new VariableType(VariableType.VarType.TEXT), "path", null)),
+                                        new List(new VariableStatement(new VariableType(VariableType.VarType.TEXT), "contents", new FileRead(new Identifier("path"))),
                                                 new PrintStatement(new Identifier("contents")))),
                                 new FunctionCall("printFile", new List(ASTNode.Type.ACTUAL_PARAMETER_LIST, new InputExpression(new Literal("Enter file path: "))))
                         )
@@ -222,7 +222,7 @@ public class HW3Test {
                 {
                   print "Invalid file";
                 }
-                                
+
                 print filecontents;
                 """);
 
@@ -232,7 +232,7 @@ public class HW3Test {
                 .isEqualTo(
                         new Program(
                                 new List(
-                                        new UntilLoop(new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "filecontents", new FileRead(new InputExpression(new Literal("Enter file: ")))), new List(new PrintStatement(new Literal("Invalid file")))),
+                                        new UntilLoop(new VariableStatement(new VariableType(VariableType.VarType.TEXT), "filecontents", new FileRead(new InputExpression(new Literal("Enter file: ")))), new List(new PrintStatement(new Literal("Invalid file")))),
                                         new PrintStatement(new Identifier("filecontents"))
                                 )
                         )
@@ -252,8 +252,8 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
-                                new VariableStatement(new VariableType(ASTNode.Type.LIST_TYPE, new VariableType(ASTNode.Type.STRING_TYPE)), "lines", new BinaryExpression("/", new Identifier("data"), new Literal("\\n"))),
+                                new VariableStatement(new VariableType(VariableType.VarType.TEXT), "data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
+                                new VariableStatement(new VariableType(java.util.List.of(VariableType.VarType.LIST, VariableType.VarType.TEXT)), "lines", new BinaryExpression("/", new Identifier("data"), new Literal("\n"))),
                                 new PrintStatement(new FunctionCall("length", new List(ASTNode.Type.ACTUAL_PARAMETER_LIST, new Identifier("lines"))))
                         ))
                 );
@@ -272,9 +272,9 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
-                                new VariableStatement(new VariableType(ASTNode.Type.LIST_TYPE, new VariableType(ASTNode.Type.STRING_TYPE)), "lines", new BinaryExpression("/", new Identifier("data"), new Literal("\\n"))),
-                                new VariableStatement(new VariableType(ASTNode.Type.LIST_TYPE, new VariableType(ASTNode.Type.STRING_TYPE)), "matches", new BinaryExpression("[??]", new Identifier("lines"), new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "1")))),
+                                new VariableStatement(new VariableType(VariableType.VarType.TEXT), "data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
+                                new VariableStatement(new VariableType(java.util.List.of(VariableType.VarType.LIST, VariableType.VarType.TEXT)), "lines", new BinaryExpression("/", new Identifier("data"), new Literal("\n"))),
+                                new VariableStatement(new VariableType(java.util.List.of(VariableType.VarType.LIST, VariableType.VarType.TEXT)), "matches", new BinaryExpression("[??]", new Identifier("lines"), new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "1")))),
                                 new PrintStatement(new Identifier("matches"))
                         ))
                 );
@@ -293,7 +293,7 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "contents", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
+                                new VariableStatement(new VariableType(VariableType.VarType.TEXT), "contents", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
                                 new FunctionCall("replaceAll", new List(ASTNode.Type.ACTUAL_PARAMETER_LIST, new Identifier("contents"), new Literal("teh"), new Literal("the"))),
                                 new FileWrite(new Identifier("contents"), new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))
                         ))
@@ -320,8 +320,8 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "file1data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
-                                new VariableStatement(new VariableType(ASTNode.Type.STRING_TYPE), "file2data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "1")))),
+                                new VariableStatement(new VariableType(VariableType.VarType.TEXT), "file1data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")))),
+                                new VariableStatement(new VariableType(VariableType.VarType.TEXT), "file2data", new FileRead(new BinaryExpression("[]", new Identifier("args"), new Literal(ASTNode.Type.NUMERIC_LITERAL, "1")))),
                                 new ConditionalStatement(new BinaryExpression("==", new Identifier("file1data"), new Identifier("file2data")),
                                         new List(new PrintStatement(new Literal("A match!"))),
                                         new List(new PrintStatement(new Literal("Different!"))))
@@ -340,7 +340,7 @@ public class HW3Test {
                     result = result + n;
                   }
                   return result;
-                }           
+                }
                 """);
 
         Assertions.assertThat(program)
@@ -348,12 +348,12 @@ public class HW3Test {
                 .usingRecursiveComparison()
                 .isEqualTo(
                         new Program(new List(
-                                new FunctionDefinition(new VariableType(ASTNode.Type.NUMERIC_TYPE),
-                                        "sum", new List(ASTNode.Type.FORMAL_PARAMETER_LIST, new VariableStatement(new VariableType(ASTNode.Type.LIST_TYPE, new VariableType(ASTNode.Type.NUMERIC_TYPE)), "nums", null)),
+                                new FunctionDefinition(new VariableType(VariableType.VarType.NUM),
+                                        "sum", new List(ASTNode.Type.FORMAL_PARAMETER_LIST, new VariableStatement(new VariableType(java.util.List.of(VariableType.VarType.LIST, VariableType.VarType.NUM)), "nums", null)),
                                         new List(
-                                                new VariableStatement(new VariableType(ASTNode.Type.NUMERIC_TYPE), "result", new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")),
-                                                new ForLoop(new VariableStatement(new VariableType(ASTNode.Type.NUMERIC_TYPE), "n", null), new Identifier("nums"),
-                                                        new List(new VariableStatement(new VariableType(ASTNode.Type.PREDEFINED), "result", new BinaryExpression("+", new Identifier("result"), new Identifier("n"))))),
+                                                new VariableStatement(new VariableType(VariableType.VarType.NUM), "result", new Literal(ASTNode.Type.NUMERIC_LITERAL, "0")),
+                                                new ForLoop(new VariableStatement(new VariableType(VariableType.VarType.NUM), "n", null), new Identifier("nums"),
+                                                        new List(new VariableStatement(new VariableType(VariableType.VarType.PREDEFINED), "result", new BinaryExpression("+", new Identifier("result"), new Identifier("n"))))),
                                                 new ReturnStatement(new Identifier("result"))
                                         ))
                         ))
@@ -396,6 +396,32 @@ public class HW3Test {
                                         )
                                 )
                         ))
+                );
+    }
+
+    @Test
+    public void test15() {
+        ASTNode program = streamerParser.parse("""
+                list<list<text>> chars = {{"a", "b"}, {"c", "d"}, {}};
+                """);
+        Assertions.assertThat(program)
+                .as("Should parse file read, if-else-statement, and print")
+                .usingRecursiveComparison()
+                .isEqualTo(
+                        new Program(
+                                new List(
+                                        new VariableStatement(
+                                                new VariableType(java.util.List.of(VariableType.VarType.LIST, VariableType.VarType.LIST, VariableType.VarType.TEXT)),
+                                                "chars",
+                                                new List(
+                                                        ASTNode.Type.EXPRESSION_LIST,
+                                                        new List(ASTNode.Type.EXPRESSION_LIST, new Literal("a"), new Literal("b")),
+                                                        new List(ASTNode.Type.EXPRESSION_LIST, new Literal("c"), new Literal("d")),
+                                                        new List(ASTNode.Type.EXPRESSION_LIST)
+                                                )
+                                        )
+                                )
+                        )
                 );
     }
 }

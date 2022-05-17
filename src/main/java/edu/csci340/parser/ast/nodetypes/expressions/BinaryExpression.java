@@ -6,6 +6,7 @@ import edu.csci340.parser.ast.nodetypes.ASTNode;
 import java.util.ArrayList;
 
 public class BinaryExpression extends ASTNode {
+
     public BinaryExpression(String value, ASTNode left, ASTNode right) {
         super(Type.BINARY_EXPRESSION, value, new ArrayList<>(){{add(left); add(right);}});
     }

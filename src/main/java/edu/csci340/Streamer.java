@@ -76,7 +76,11 @@ public class Streamer {
                     }
                     break;
                 case "interpret":
-                    StreamerInterpreter.eval(in);
+                    try {
+                        StreamerInterpreter.eval(in);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     break;
             }
         } else {

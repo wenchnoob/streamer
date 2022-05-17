@@ -9,7 +9,9 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @RequiredArgsConstructor
-public abstract class ASTNode {
+@Builder(toBuilder = true)
+@ToString
+public class ASTNode {
 
     @NonNull
     private Type type;
@@ -53,12 +55,11 @@ public abstract class ASTNode {
         return children.get(n);
     }
 
-    @Override
-    public String toString() {
-        return toString(0);
-    }
+//    public String toString() {
+//        return "Program: \n" + printChildren(1);
+//    }
 
-    public abstract String toString(int depth);
+    public String toString(int depth) { return "Not Implemented"; }
 
     public String printChildren(int depth) {
         StringBuilder tabs = new StringBuilder();
@@ -68,7 +69,7 @@ public abstract class ASTNode {
             str.append(tabs).append("Children:\n");
             depth++;
             tabs.append('\t');
-            for (int i = 0; i < children.size(); i++) str.append(tabs).append(String.format("Child %d:\n%s", i, Objects.nonNull(nthChild(i)) ? nthChild(i).toString(depth + 1) : null));
+            for (int i = 0; i < children.size(); i++) str.append(tabs).append(String.format("Child %d:\n%s", i, Objects.nonNull(nthChild(i)) ? nthChild(i).toString(depth + 1) : ""));
         }
         return str.toString();
     }
@@ -78,13 +79,10 @@ public abstract class ASTNode {
         BINARY_EXPRESSION,
         STATEMENT_LIST,
         VARIABLE,
-        LIST_TYPE,
-        NUMERIC_TYPE,
-        STRING_TYPE,
+        VARIABLE_TYPE,
         NUMERIC_LITERAL,
         STRING_LITERAL,
         BOOLEAN_LITERAL,
-        BOOLEAN_TYPE,
         EXPRESSION_LIST,
         FILE_READ,
         FILE_WRITE,
@@ -109,7 +107,6 @@ public abstract class ASTNode {
         FUNCTION_CALL,
         SWITCH,
         CASE,
-        UNARY_EXPRESSION,
-        VOID
+        UNARY_EXPRESSION
     }
 }

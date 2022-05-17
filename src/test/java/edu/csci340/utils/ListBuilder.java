@@ -3,7 +3,7 @@ package edu.csci340.utils;
 import edu.csci340.parser.ast.nodetypes.ASTNode;
 import edu.csci340.parser.ast.nodetypes.List;
 
-public class ListBuilder implements Builder{
+public class ListBuilder implements Builder {
 
     Builder parent;
     List items;
@@ -19,8 +19,8 @@ public class ListBuilder implements Builder{
     public ProgramBuilder end() {
         if (parent instanceof ProgramBuilder pb) {
             pb.addStatement(build());
-        } else if (parent instanceof VariableStatementBuilder vsb) {
-            return vsb.end(items);
+        } else if (parent instanceof ExpressionBuilder eb) {
+            return null; //eb.end(build());
         } else if (parent instanceof PrintStatementBuilder psb) {
             return psb.end(items);
         }

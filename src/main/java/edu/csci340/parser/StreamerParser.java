@@ -117,7 +117,7 @@ public class StreamerParser {
      */
     public ASTNode expression() {
         return switch (this.lookahead.type()) {
-            case INPUT, ID, OPENING_PAREN, OPENING_CURLY, NEGATION, STRING_LITERAL, NUMERIC_LITERAL, BOOLEAN_LITERAL -> new ExpressionParser(this).functionCall();
+            case INPUT, ID, OPENING_PAREN, OPENING_CURLY, NEGATION, STRING_LITERAL, NUMERIC_LITERAL, BOOLEAN_LITERAL -> new ExpressionParser(this).expression();
             default -> fail();
         };
     }

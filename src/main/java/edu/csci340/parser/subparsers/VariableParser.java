@@ -9,6 +9,9 @@ import edu.csci340.parser.ast.nodetypes.expressions.literals.Identifier;
 import edu.csci340.parser.ast.nodetypes.statements.FileAppend;
 import edu.csci340.parser.ast.nodetypes.statements.FileWrite;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VariableParser {
 
     private StreamerParser parent;
@@ -59,30 +62,57 @@ public class VariableParser {
         Token assign = parent.currentLookAhead();
         if (assign.type() != ASSIGNMENT) parent.fail();
         parent.advance();
-        return new VariableStatement(new VariableType(ASTNode.Type.PREDEFINED), id.value(), parent.expression());
+        return new VariableStatement(new VariableType(VariableType.VarType.PREDEFINED), id.value(), parent.expression());
     }
 
     public ASTNode parseType() {
         Token la = parent.currentLookAhead();
         if (la.type() != BUILT_IN_TYPE) return null;
         parent.advance();
+
         return switch (la.value()) {
-            case "void" -> new VariableType(ASTNode.Type.VOID);
-            case "text" -> new VariableType(ASTNode.Type.STRING_TYPE);
-            case "num" -> new VariableType(ASTNode.Type.NUMERIC_TYPE);
-            case "bool" -> new VariableType(ASTNode.Type.BOOLEAN_TYPE);
-            case "list" -> {
-                parent.advance();
-                VariableType varType = new VariableType(ASTNode.Type.LIST_TYPE, parseType());
-                la = parent.currentLookAhead();
-                if (la.value().equals(">")) parent.advance();
-                else if (la.value().equals(">>")) {
-                    parent.advance();
-                    parent.pushBack(new Token(RELATIONAL_OPERATOR, ">", la.line(), la.column() + 1));
-                } else parent.fail();
-                yield varType;
-            }
+            case "void" -> new VariableType(VariableType.VarType.VOID);
+            case "text" -> new VariableType(VariableType.VarType.TEXT);
+            case "num" -> new VariableType(VariableType.VarType.NUM);
+            case "bool" -> new VariableType(VariableType.VarType.BOOL);
+            case "list" -> new VariableType(parseListTypeRecursive());
             default -> parent.fail();
         };
+    }
+
+    public java.util.List<VariableType.VarType> parseListType() {
+        Token la = parent.currentLookAhead();
+        if (la.type() != BUILT_IN_TYPE) return List.of();
+        parent.advance();
+
+        return switch (la.value()) {
+            case "text" -> List.of(VariableType.VarType.TEXT);
+            case "num" -> List.of(VariableType.VarType.NUM);
+            case "bool" -> List.of(VariableType.VarType.BOOL);
+            case "list" -> parseListTypeRecursive();
+
+            default -> {
+                parent.fail();
+                yield List.of();
+            }
+        };
+    }
+
+    private List<VariableType.VarType> parseListTypeRecursive() {
+        Token la = parent.currentLookAhead();
+        if (!la.value().equals("<")) parent.fail();
+        parent.advance();
+        List<VariableType.VarType> types = new ArrayList<>();
+        types.add(VariableType.VarType.LIST);
+        types.addAll(parseListType());
+        la = parent.currentLookAhead();
+
+        if (la.value().equals(">")) {
+            parent.advance();
+        } else if (la.value().equals(">>")){
+            parent.advance();
+            parent.pushBack(new Token(RELATIONAL_OPERATOR, ">", -1, -1));
+        } else parent.fail();
+        return types;
     }
 }

@@ -1,1 +1,27 @@
-print "You chose the number: " + (input "Choose a number: ") + " and I chose the number " + ({1, 2, 3}[1]);
+
+list<text> words = {"a", "b", "c"};
+
+func text addApe(text t) {
+    return t + "ape";
+}
+
+for (text word: {addApe("v"), addApe("d"), addApe("l")}) {
+    print word + "\n";
+}
+
+num i = 0;
+while (i < 14) {
+    print i + "\n";
+    i = i + 1;
+}
+
+// variable assign
+// input
+// print
+// expressions
+// if
+// variable casting
+// function definition
+// function call
+// next:
+//  for, fix function call and definition

@@ -5,12 +5,46 @@ import edu.csci340.parser.StreamerParser;
 import edu.csci340.parser.ast.nodetypes.ASTNode;
 import edu.csci340.parser.ast.nodetypes.expressions.literals.Literal;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 public class Utils {
 
     public static String tabs(int n) {
         StringBuilder tabs = new StringBuilder();
         for (int i = 0; i < n; i++) tabs.append('\t');
         return tabs.toString();
+    }
+
+    public static ASTNode copy(ASTNode src) {
+        if (src == null) return null;
+        ASTNode.ASTNodeBuilder nsrc = src.toBuilder();
+        if (src.value() instanceof ASTNode vn) nsrc.value(copy(vn));
+        List<ASTNode> children = new ArrayList<>();
+        if (Objects.nonNull(src.children()))
+            for (ASTNode c : src.children()) {
+                children.add(copy(c));
+            }
+        return nsrc.children(children).build();
+    }
+
+    public static boolean isTruthy(ASTNode node) {
+        if (Objects.isNull(node)) return false;
+        return switch (node.type()) {
+            case BOOLEAN_LITERAL -> Boolean.parseBoolean(String.valueOf(node.value()));
+            case STRING_LITERAL -> {
+                String s = String.valueOf(node.value());
+                if (s.equals("true") || s.equals("false")) yield Boolean.parseBoolean(s);
+                if (s.equals("")) yield false;
+                yield true;
+            }
+            case NUMERIC_LITERAL -> {
+                double num = Double.parseDouble(String.valueOf(node.value()));
+                yield !(num == 0);
+            }
+            default -> false;
+        };
     }
 
     public static Literal parseLiteralTokenToNode(Token tok) {

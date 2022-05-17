@@ -21,110 +21,10 @@ public class ExpressionParser {
     }
 
     /**
-     * FunctionCall ::=
-     * ID ( InputExpressionList ) |
-     * InputExpression
-     */
-    public ASTNode functionCall() {
-        if (parent.currentLookAhead().type() != Token.Type.ID) return this.inputExpression();
-        Token idToken = parent.currentLookAhead();
-        parent.advance();
-        if (parent.currentLookAhead().type() != Token.Type.OPENING_PAREN) {
-            parent.pushBack(idToken);
-            return this.inputExpression();
-        }
-        parent.advance();
-        String id = idToken.value();
-        List actualParameterList = new List(ASTNode.Type.ACTUAL_PARAMETER_LIST);
-        while (parent.currentLookAhead().type() != Token.Type.CLOSING_PAREN) {
-            actualParameterList.append(inputExpression());
-            if (parent.currentLookAhead().type() != Token.Type.COMMA) break;
-            parent.advance();
-        }
-        parent.advance();
-        return new FunctionCall(id, actualParameterList);
-    }
-
-    /**
-     * InputExpression ::= INPUT Expression
-     */
-    public ASTNode inputExpression() {
-        if (parent.currentLookAhead().type() != Token.Type.INPUT) return listAccess();
-        parent.advance();
-        return new InputExpression(listAccess());
-    }
-
-    /**
-     * List Access ::=
-     * List Filter [ ListFilter ]
-     */
-    public ASTNode listAccess() {
-        ASTNode lhs = listFilter();
-        if (parent.currentLookAhead().type() != Token.Type.OPENING_SQUARE) return lhs;
-        parent.advance();
-        ASTNode rhs = listFilter();
-        if (parent.currentLookAhead().type() != Token.Type.CLOSING_SQUARE) parent.fail();
-        parent.advance();
-        return new BinaryExpression("[]", lhs, rhs);
-    }
-
-    /**
-     * List Filter ::=
-     * List Expression [? List Expression ?]
-     */
-    public ASTNode listFilter() {
-        ASTNode lhs = listExpression();
-        if (parent.currentLookAhead().type() != Token.Type.OPENING_FILTER) return lhs;
-        parent.advance();
-        ASTNode rhs = listExpression();
-        if (parent.currentLookAhead().type() != Token.Type.CLOSING_FILTER) parent.fail();
-        parent.advance();
-        return new BinaryExpression("[??]", lhs, rhs);
-    }
-
-
-    /**
-     * List Expression ::=
-     * List Expression , Expression |
-     * Expression
-     */
-    public ASTNode listExpression() {
-        if (parent.currentLookAhead().type() != Token.Type.OPENING_CURLY) return this.expression();
-
-        parent.advance();
-        List expressionList = new List(ASTNode.Type.EXPRESSION_LIST);
-
-        if (parent.currentLookAhead().type() == Token.Type.CLOSING_CURLY) {
-            parent.advance();
-            return expressionList;
-        }
-
-        expressionList.append(functionCall());
-        while (parent.currentLookAhead().type() != Token.Type.CLOSING_CURLY) {
-            if (parent.currentLookAhead().type() != Token.Type.COMMA) parent.fail();
-            parent.advance();
-            expressionList.append(functionCall());
-        }
-
-        if (parent.currentLookAhead().type() != Token.Type.CLOSING_CURLY) parent.fail();
-        parent.advance();
-
-        return expressionList;
-    }
-
-    /**
      * Expression ::=
-     * Boolean Expression |
-     */
-    public ASTNode expression() {
-        return this.booleanExpression();
-    }
-
-    /**
-     * Boolean Expression ::=
      * Or Expression
      */
-    public ASTNode booleanExpression() {
+    public ASTNode expression() {
         return this.orExpression();
     }
 
@@ -244,57 +144,108 @@ public class ExpressionParser {
     }
 
     /**
-     * UnaryExpression ::=
-     * ! PrimaryExpression |
-     * - PrimaryExpression
+     *  UnaryExpression ::=
+     *      ! ListAccess |
+     *      - ListAccess |
+     *      ListAccess
      */
     public ASTNode unaryExpression() {
         Token la = parent.currentLookAhead();
         return switch (la.type()) {
             case NEGATION, ADDITIVE_OPERATOR -> {
-                if (la.value().equals("-")) yield this.primaryExpression();
+                if (la.value().equals("-")) yield this.listAccess();
                 parent.advance();
-                yield new UnaryExpression(la.value(), this.unaryExpression());
+                yield new UnaryExpression(la.value(), this.listAccess());
             }
-            default -> this.primaryExpression();
+            default -> this.listAccess();
         };
+    }
+
+    /**
+     *  ListAccess ::=
+     *      ListAccess [ Expression ] |
+     *      ListFilter
+     */
+    public ASTNode listAccess() {
+        ASTNode lhs = listFilter();
+        while(parent.currentLookAhead().type() == Token.Type.OPENING_SQUARE) {
+            parent.advance(); // ignore [
+            lhs = new BinaryExpression("[]", lhs, parent.expression());
+            parent.advance(); // ignore ]
+        }
+        return lhs;
+    }
+
+    /**
+     *  List Filter ::=
+     *      ListFilter [? Expression ?] |
+     *      InputExpression
+     */
+    public ASTNode listFilter() {
+        ASTNode lhs = inputExpression();
+        while(parent.currentLookAhead().type() == Token.Type.OPENING_FILTER) {
+            parent.advance(); // ignore [?
+            lhs = new BinaryExpression("[??]", lhs, parent.expression());
+            parent.advance(); // ignore /]
+        }
+        return lhs;
+    }
+
+    /**
+     *  InputExpression ::=
+     *      INPUT InputExpression |
+     *      FunctionCall
+     */
+    public ASTNode inputExpression() {
+        if (parent.currentLookAhead().type() != Token.Type.INPUT) return functionCall();
+        parent.advance(); // ignore input
+        return new InputExpression(inputExpression());
+    }
+
+    /**
+     *  FunctionCall ::=
+     *      ID ( ExpressionList ) |
+     *      ID |
+     *      PrimaryExpression
+     */
+    public ASTNode functionCall() {
+        if (parent.currentLookAhead().type() != Token.Type.ID) return this.primaryExpression();
+        Token idToken = parent.currentLookAhead();
+        parent.advance();
+        if (parent.currentLookAhead().type() != Token.Type.OPENING_PAREN) {
+            parent.pushBack(idToken);
+            return this.primaryExpression();
+        }
+        parent.advance();
+        String id = idToken.value();
+        List actualParameterList = new List(ASTNode.Type.ACTUAL_PARAMETER_LIST);
+        while (parent.currentLookAhead().type() != Token.Type.CLOSING_PAREN) {
+            actualParameterList.append(parent.expression());
+            if (parent.currentLookAhead().type() != Token.Type.COMMA) break;
+            parent.advance();
+        }
+        parent.advance();
+        return new FunctionCall(id, actualParameterList);
     }
 
 
     /**
-     * PrimaryExpression ::=
-     * ListExpression |
-     * ParenthesizedExpression |
-     * ID |
-     * Literal
+     *  PrimaryExpression ::=
+     *      ParenthesizedExpression |
+     *      ID |
+     *      Literal |
+     *      ExpressionList
      */
     public ASTNode primaryExpression() {
         Token la = parent.currentLookAhead();
         return switch (la.type()) {
-            case OPENING_CURLY -> listExpression();
-            case INPUT -> parent.expression();
             case OPENING_PAREN -> parenthesizedExpression();
+            case OPENING_CURLY -> expressionList();
             case ID -> {
                 parent.advance();
                 if (parent.currentLookAhead().type() == Token.Type.OPENING_PAREN) {
                     parent.pushBack(la);
                     yield functionCall();
-                }
-
-                if (parent.currentLookAhead().type() == Token.Type.OPENING_SQUARE) {
-                    parent.advance();
-                    ASTNode rhs = parent.expression();
-                    if (parent.currentLookAhead().type() != Token.Type.CLOSING_SQUARE) parent.fail();
-                    parent.advance();
-                    yield new BinaryExpression("[]", new Identifier(la.value()), rhs);
-                }
-
-                if (parent.currentLookAhead().type() == Token.Type.OPENING_FILTER) {
-                    parent.advance();
-                    ASTNode rhs = parent.expression();
-                    if (parent.currentLookAhead().type() != Token.Type.CLOSING_FILTER) parent.fail();
-                    parent.advance();
-                    yield new BinaryExpression("[??]", new Identifier(la.value()), rhs);
                 }
 
                 if (parent.currentLookAhead().type() == Token.Type.FILE_WRITE || parent.currentLookAhead().type() == Token.Type.FILE_APPEND) {
@@ -307,6 +258,36 @@ public class ExpressionParser {
             case BOOLEAN_LITERAL, NUMERIC_LITERAL, STRING_LITERAL -> literal();
             default -> parent.fail();
         };
+    }
+
+    /**
+     *  List Expression ::=
+     *      ExpressionList , Expression |
+     *      Expression |
+     *      empty
+     */
+    public ASTNode expressionList() {
+        if (parent.currentLookAhead().type() != Token.Type.OPENING_CURLY) return parent.expression();
+
+        parent.advance();
+        List expressionList = new List(ASTNode.Type.EXPRESSION_LIST);
+
+        if (parent.currentLookAhead().type() == Token.Type.CLOSING_CURLY) {
+            parent.advance();
+            return expressionList;
+        }
+
+        expressionList.append(functionCall());
+        while (parent.currentLookAhead().type() != Token.Type.CLOSING_CURLY) {
+            if (parent.currentLookAhead().type() != Token.Type.COMMA) parent.fail();
+            parent.advance();
+            expressionList.append(parent.expression());
+        }
+
+        if (parent.currentLookAhead().type() != Token.Type.CLOSING_CURLY) parent.fail();
+        parent.advance();
+
+        return expressionList;
     }
 
 

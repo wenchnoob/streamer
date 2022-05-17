@@ -4,6 +4,8 @@ import edu.csci340.parser.ast.nodetypes.ASTNode;
 import edu.csci340.parser.ast.nodetypes.expressions.assignment.VariableStatement;
 import edu.csci340.parser.ast.nodetypes.expressions.assignment.VariableType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class VariableStatementBuilder implements Builder {
@@ -48,26 +50,24 @@ public class VariableStatementBuilder implements Builder {
     public static class TypeBuilder implements Builder {
 
         private Builder parent;
-        private ASTNode.Type t;
-        private TypeBuilder subType;
+        private List<VariableType.VarType> types;
 
         public TypeBuilder(Builder parent) {
             this.parent = parent;
+            this.types = new ArrayList<>();
         }
 
-        public TypeBuilder of(ASTNode.Type t) {
-            this.t = t;
+        public TypeBuilder of(VariableType.VarType t) {
+            types.add(t);
             return this;
         }
 
-        public TypeBuilder and() {
-            subType = new TypeBuilder(this);
-            return subType;
+        public TypeBuilder and(VariableType.VarType t) {
+            return of(t);
         }
 
         public ASTNode endType() {
-            if (Objects.isNull(subType)) return new VariableType(t, null);
-            return new VariableType(t, subType.endType());
+           return new VariableType(types);
         }
 
         public VariableStatementBuilder end() {

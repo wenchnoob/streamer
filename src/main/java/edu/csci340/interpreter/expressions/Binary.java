@@ -1,6 +1,7 @@
 package edu.csci340.interpreter.expressions;
 
 import edu.csci340.interpreter.StreamerInterpreter;
+import edu.csci340.interpreter.scopes.Scope;
 import edu.csci340.parser.ast.nodetypes.ASTNode;
 import edu.csci340.parser.ast.nodetypes.expressions.literals.Literal;
 
@@ -36,9 +37,6 @@ public class Binary {
             put(">", gt);
             put("<=", lteq);
             put(">=", gteq);
-            put("<<", read);
-            put(">>", write);
-            put(">>+", append);
             put("&&", and);
             put("||", or);
             put("[]", access);
@@ -46,20 +44,25 @@ public class Binary {
         }
     };
 
-    public ASTNode eval(ASTNode exp) {
+    public ASTNode eval(ASTNode exp, Scope scope) {
         if (exp.type() == ASTNode.Type.NUMERIC_LITERAL ||
                 exp.type() == ASTNode.Type.STRING_LITERAL ||
-                exp.type() == ASTNode.Type.BOOLEAN_LITERAL) return exp;
+                exp.type() == ASTNode.Type.BOOLEAN_LITERAL ||
+                exp.type() == ASTNode.Type.EXPRESSION_LIST) return exp;
 
-        ASTNode l = exp.firstChild(StreamerInterpreter.eval(exp.firstChild()));
-        ASTNode r = exp.lastChild(StreamerInterpreter.eval(exp.lastChild()));
+        ASTNode l = exp.firstChild(StreamerInterpreter.eval(exp.firstChild(), scope));
+        ASTNode r = exp.lastChild(StreamerInterpreter.eval(exp.lastChild(), scope));
 
-        Object lhs = getValue(l);
-        Object rhs = getValue(r);
+        Object lhs = getValue(l, scope);
+        Object rhs = getValue(r, scope);
 
         Object res = binOps.get(exp.value()).apply(lhs, rhs);
 
+        if (res instanceof ASTNode a) return a;
+
         if (res instanceof String s) return new Literal(s);
+
+        if (res instanceof Character c) return new Literal(String.valueOf(c));
 
         if (res instanceof Double d) {
             if (d == d.intValue()) res = d.intValue();
@@ -74,7 +77,12 @@ public class Binary {
 
         if (res instanceof List<?> list) {
             edu.csci340.parser.ast.nodetypes.List ls = new edu.csci340.parser.ast.nodetypes.List(ASTNode.Type.EXPRESSION_LIST);
-            list.forEach(v -> ls.append((ASTNode) v));
+            list.forEach(v -> {
+                if (v instanceof ASTNode n) ls.append(n);
+                else if (v instanceof String s) ls.append(new Literal(s));
+                else if (v instanceof Double || v instanceof Integer) ls.append(new Literal(ASTNode.Type.NUMERIC_LITERAL, String.valueOf(v)));
+                else if ( v instanceof Boolean b) ls.append(new Literal(ASTNode.Type.BOOLEAN_LITERAL, String.valueOf(b)));
+            });
             return ls;
         }
 
@@ -85,7 +93,7 @@ public class Binary {
         return exp;
     }
 
-    private Object getValue(ASTNode l) {
+    private Object getValue(ASTNode l, Scope scope) {
         return switch (l.type()) {
             case STRING_LITERAL -> String.valueOf(l.value());
             case NUMERIC_LITERAL -> {
@@ -96,6 +104,11 @@ public class Binary {
             }
             case BOOLEAN_LITERAL -> Boolean.valueOf(String.valueOf(l.value()));
             case EXPRESSION_LIST -> l.children();
+            case IDENTIFIER -> {
+                ASTNode s = StreamerInterpreter.eval(l, scope);
+                System.out.println(l.type());
+                yield s;
+            }
             default -> throw new IllegalArgumentException("Cannot retrieve a value from this node: \n" + l.toString(1));
         };
     }
@@ -230,47 +243,75 @@ public class Binary {
         throw new IllegalArgumentException("Incompatible types");
     };
 
-    static BinaryOperator<Object> read = (l, r) -> {
-        return null;
-    };
-
-    static BinaryOperator<Object> write = (l, r) -> {
-        return null;
-    };
-
-    static BinaryOperator<Object> append = (l, r) -> {
-        return null;
-    };
-
     static BinaryOperator<Object> equals = Object::equals;
 
     static BinaryOperator<Object> notEquals = (l, r) -> !(Boolean) equals.apply(l, r);
 
     static BinaryOperator<Object> lt = (l, r) -> {
+        if (l instanceof Integer i) l = Double.valueOf(i);
+        if (r instanceof Integer i) r = Double.valueOf(i);
+
         if (l instanceof String sl) {
+            if (r instanceof Double rd) return sl.compareTo(String.valueOf(rd)) < 0;
             if (r instanceof String rl) return sl.compareTo(rl) < 0;
         }
-        throw new IllegalArgumentException("Incomparable types");
+
+        if (l instanceof Double ld) {
+            if (r instanceof Double rd) return ld < rd;
+            if (r instanceof String rs) return String.valueOf(ld).compareTo(rs) < 0;
+        }
+
+        throw new IllegalArgumentException("Incomparable types" + l + r);
     };
 
     static BinaryOperator<Object> gt = (l, r) -> {
+        if (l instanceof Integer i) l = Double.valueOf(i);
+        if (r instanceof Integer i) r = Double.valueOf(i);
+
         if (l instanceof String sl) {
+            if (r instanceof Number rd) return sl.compareTo(String.valueOf(rd)) > 0;
             if (r instanceof String rl) return sl.compareTo(rl) > 0;
         }
+
+        if (l instanceof Double ld) {
+            if (r instanceof Double rd) return ld > rd;
+            if (r instanceof String rs) return String.valueOf(ld).compareTo(rs) > 0;
+        }
+
         throw new IllegalArgumentException("Incomparable types");
     };
 
     static BinaryOperator<Object> lteq = (l, r) -> {
+        if (l instanceof Integer i) l = Double.valueOf(i);
+        if (r instanceof Integer i) r = Double.valueOf(i);
+
         if (l instanceof String sl) {
+            if (r instanceof Double rd) return sl.compareTo(String.valueOf(rd)) <= 0;
             if (r instanceof String rl) return sl.compareTo(rl) <= 0;
         }
+
+        if (l instanceof Double ld) {
+            if (r instanceof Double rd) return ld <= rd;
+            if (r instanceof String rs) return String.valueOf(ld).compareTo(rs) <= 0;
+        }
+
         throw new IllegalArgumentException("Incomparable types");
     };
 
     static BinaryOperator<Object> gteq = (l, r) -> {
+        if (l instanceof Integer i) l = Double.valueOf(i);
+        if (r instanceof Integer i) r = Double.valueOf(i);
+
         if (l instanceof String sl) {
+            if (r instanceof Double rd) return sl.compareTo(String.valueOf(rd)) >= 0;
             if (r instanceof String rl) return sl.compareTo(rl) >= 0;
         }
+
+        if (l instanceof Double ld) {
+            if (r instanceof Double rd) return ld >= rd;
+            if (r instanceof String rs) return String.valueOf(ld).compareTo(rs) >= 0;
+        }
+
         throw new IllegalArgumentException("Incomparable types");
     };
 
@@ -319,8 +360,18 @@ public class Binary {
         }
 
         if (l instanceof edu.csci340.parser.ast.nodetypes.List ls) {
-            if (r instanceof Integer i) return StreamerInterpreter.eval(ls.children().get(i)).value();
-            if (r instanceof Double d) return StreamerInterpreter.eval(ls.children().get(d.intValue())).value();
+            if (r instanceof Integer i) return StreamerInterpreter.eval(ls.children().get(i), null).value();
+            if (r instanceof Double d) return StreamerInterpreter.eval(ls.children().get(d.intValue()), null).value();
+        }
+
+        if (l instanceof Literal s && s.type() == ASTNode.Type.STRING_LITERAL) {
+            if (r instanceof Integer i) return ((String)s.value()).charAt(i);
+            if (r instanceof Double d) return ((String)s.value()).charAt(d.intValue());
+        }
+
+        if (l instanceof String s) {
+            if (r instanceof Integer i) return s.charAt(i);
+            if (r instanceof Double d) return s.charAt(d.intValue());
         }
 
         throw new IllegalArgumentException("Incompatible types obj1: " + l + " obj2: " + r);
@@ -331,7 +382,32 @@ public class Binary {
      */
     static BinaryOperator<Object> filter = (l, r) -> {
         if (l instanceof List<?> ls) {
-            return ls.stream().filter(v -> v.equals(r)).collect(Collectors.toList());
+            if (r instanceof Literal lit) {
+                return ls.stream().filter(v -> {
+                    if (v instanceof ASTNode k) {
+                        k = StreamerInterpreter.eval((ASTNode) v, null);
+                        if (k instanceof Literal lit2) {
+                            return String.valueOf(lit2.value()).matches(String.valueOf(lit.value()));
+                        }
+                    }
+                    return v.equals(r);
+                }).collect(Collectors.toList());
+            } else if (r instanceof String str) {
+                return ls.stream().filter(v -> {
+                    if (v instanceof ASTNode k) {
+                        k = StreamerInterpreter.eval((ASTNode) v, null);
+                        if (k instanceof Literal lit) {
+                            return String.valueOf(lit.value()).matches(str);
+                        }
+                    }
+                    return v.equals(r);
+                }).collect(Collectors.toList());
+            } else throw new IllegalArgumentException("Incompatible types obj1: " + l + " obj2: " + r);
+        }
+
+        if (l instanceof edu.csci340.parser.ast.nodetypes.List ls) {
+            if (r instanceof Integer i) return StreamerInterpreter.eval(ls.children().get(i),null).value();
+            if (r instanceof Double d) return StreamerInterpreter.eval(ls.children().get(d.intValue()), null).value();
         }
 
         throw new IllegalArgumentException("Incompatible types obj1: " + l + " obj2: " + r);

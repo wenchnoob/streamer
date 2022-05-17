@@ -1,6 +1,8 @@
 package edu.csci340.lexer;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -13,6 +15,8 @@ public class StreamerLexer {
     private final Spec[] specs = {
             // whitespace -- but not new line
             new Spec(Pattern.compile("^[\\s&&[^\\n]]+"), null, false),
+            // comment
+            new Spec(Pattern.compile("^//.*"), null, false),
             // new line
             new Spec(Pattern.compile("^\\n"), Token.Type.NEWLINE, false),
             // keywords
@@ -128,8 +132,12 @@ public class StreamerLexer {
                 return this.nextToken();
             }
 
-            // if is a string, remove the quotes
-            if (spec.type == Token.Type.STRING_LITERAL) value = value.substring(1, value.length() -1);
+            // if is a string, remove the quotes and interpret escapes
+            if (spec.type == Token.Type.STRING_LITERAL) {
+                int col = column;
+                this.column += value.length();
+                return new Token(spec.type, interpret(value.substring(1, value.length() -1)), line, col);
+            }
 
             // if is a keyword, built in type, or boolean try to parse an id instead
             if (spec.conflicts()) {
@@ -167,6 +175,10 @@ public class StreamerLexer {
             return match;
         }
         return null;
+    }
+
+    public static String interpret(String s) {
+        return s.translateEscapes();
     }
 
     private record Spec(Pattern pat, Token.Type type, boolean conflicts) {}

@@ -67,7 +67,7 @@ public class StreamerLexerTest {
                         .isEqualTo(new Token(Token.Type.STRING_LITERAL, "hey there buddy", 1, 3)),
                 () -> Assertions.assertThat(lexer.nextToken())
                         .as("Should parse escape characters \\n \\\" and \\\\")
-                        .isEqualTo(new Token(Token.Type.STRING_LITERAL, "hey there with \\\"escapes\\\" \\n \\\\ ", 2, 3)));
+                        .isEqualTo(new Token(Token.Type.STRING_LITERAL, "hey there with \"escapes\" \n \\ ", 2, 3)));
     }
 
     @Test
@@ -99,9 +99,9 @@ public class StreamerLexerTest {
                 .as("Should parse print statement")
                 .isEqualTo(List.of(
                         new Token(Token.Type.PRINT, "print", 1, 1),
-                        new Token(Token.Type.STRING_LITERAL, "Hello \\\"world\\\"", 1, 7),
-                        new Token(Token.Type.SEMICOLON, ";", 1, 22),
-                        new Token(Token.Type.EOF, null, 1, 23)
+                        new Token(Token.Type.STRING_LITERAL, "Hello \"world\"", 1, 7),
+                        new Token(Token.Type.SEMICOLON, ";", 1, 24),
+                        new Token(Token.Type.EOF, null, 1, 25)
                 ));
     }
 

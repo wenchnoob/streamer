@@ -185,8 +185,8 @@ public class StreamerParserTest {
                 .isEqualTo(
                         new Program(
                                 new List(
-                                        new VariableStatement(new VariableType(NUMERIC_TYPE), "x", new Literal(NUMERIC_LITERAL, "3.5")),
-                                        new VariableStatement(new VariableType(STRING_TYPE), "words", null)
+                                        new VariableStatement(new VariableType(VariableType.VarType.NUM), "x", new Literal(NUMERIC_LITERAL, "3.5")),
+                                        new VariableStatement(new VariableType(VariableType.VarType.TEXT), "words", null)
                                 )
                         )
                 );
@@ -230,12 +230,12 @@ public class StreamerParserTest {
                         new Program(
                                 new List(
                                         new ForLoop(
-                                                new VariableStatement(new VariableType(NUMERIC_TYPE), "n", null),
+                                                new VariableStatement(new VariableType(VariableType.VarType.NUM), "n", null),
                                                 new Identifier("nums"),
                                                 new PrintStatement(new Identifier("n"))
                                         ),
                                         new ForLoop(
-                                                new VariableStatement(new VariableType(NUMERIC_TYPE), "n", null),
+                                                new VariableStatement(new VariableType(VariableType.VarType.NUM), "n", null),
                                                 new Identifier("nums"),
                                                 new List(new PrintStatement(new Identifier("n")),
                                                         new PrintStatement(
