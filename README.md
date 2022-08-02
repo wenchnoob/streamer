@@ -1,5 +1,5 @@
 
-# This is an Lexer, Parser, and Interpreter for Lexer -- A domain specific string processing language.
+# This is an Lexer, Parser, and Interpreter for Streamer -- A domain specific string processing language.
 
 ## How to run
 java -jar parser.jar <code><var>file</var></code>
